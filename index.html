@@ -1,0 +1,64 @@
+
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>Welcome - nyaray.com</title>
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="/assets/css/prism.css">
+  </head>
+  <body>
+    <div id="wrapper">
+      <header id="top">
+        <h1><a href="/">nyaray.com</a></h1>
+        <p>Brain to hand, hand to keyboard.</p>
+      </header>
+      <nav>
+<ul>
+  <li><a href="/index.html">Home</a></li>
+  <li><a href="/posts">Posts</a></li>
+</ul>
+</nav>
+      <hr>
+      <main><article><div><p>This is my third attempt at keeping a static page alive, this time using the Elixir static site generator <a href="https://dalgona.github.io/Serum/">Serum</a>. Check out the <a href="%3C%25=%20base%20%22posts%22%20%25%3E">posts</a> section to look at something that might change over time.</p></div></article></main>
+      <hr>
+      <footer>
+        
+<!--=====================================-->
+<!-- Override "includes/footer.html.eex" -->
+<!-- to customize your footer contents.  -->
+<!--=====================================-->
+
+        <p>
+          Powered by <a href="https://github.com/Dalgona/Serum">Serum</a> v1.1.0,
+          with <a href="https://github.com/Dalgona/serum-theme-essence">Essence</a> theme
+        </p>
+      </footer>
+    </div>
+    <script src="/assets/js/prism.js"></script>
+  </body>
+</html>
+<script>
+const ws_url = "ws://" + location.host + "/serum_live_reloader";
+var ws;
+
+connect();
+
+function connect() {
+  ws = new WebSocket(ws_url);
+  ws.onmessage = onMessage;
+  ws.onclose = onClose;
+}
+
+function onMessage(e) {
+  if (e.data === "reload") {
+    location.reload();
+  }
+}
+
+function onClose(e) {
+  console.warn("WebSocket disconnected from server. Reconnecting in 10 seconds.");
+  setTimeout(connect, 10000)
+}
+</script>
