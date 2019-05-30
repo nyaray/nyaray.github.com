@@ -1,0 +1,254 @@
+
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>Scenic Mini-Tip #1 - nyaray.com</title>
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="/assets/css/prism.css">
+  </head>
+  <body>
+    <div id="wrapper">
+      <header id="top">
+        <h1><a href="/">nyaray.com</a></h1>
+        <p>Brain to hand, hand to keyboard.</p>
+      </header>
+      <nav>
+<ul>
+  <li><a href="/index.html">Home</a></li>
+  <li><a href="/posts">Posts</a></li>
+</ul>
+</nav>
+      <hr>
+      <main><article class="post"><header><h1 id="scenic-mini-tip-#1">Scenic Mini-Tip #1</h1><p>
+      Thursday, 30 May 2019
+      
+        <span class="tags">
+          Tags:
+          
+            <a class="tag" href="/tags/elixir">elixir</a><a class="tag" href="/tags/scenic">scenic</a></span></p></header><div><p>So, you’re finally over the hump and are starting to feel productive with your Scenic skills and have just started to get more than a handful of different components and primitives into your <a href="https://hexdocs.pm/scenic/Scenic.Scene.html">Scene</a> when you notice that your graph is a bit messy.</p><p>When making a Scene (hehe) you might end up with something like this at the top-level of your graph definition …</p><p><style ref="/css/overlay.css">code { overflow-x: scroll; }</style></p><pre><code class="language-elixir">@graph Graph.build(font: :roboto, font_size: 16)
+       |&gt; group(
+         &amp;(&amp;1
+           |&gt; group(
+             fn g -&gt;
+               g
+               |&gt; button(&quot;button 1&quot;, translate: {0, 0})
+               |&gt; button(&quot;button 2&quot;, translate: {50, 0})
+             end,
+             translate: {500, 0}
+           )
+           |&gt; group(
+             fn g -&gt;
+               g
+               |&gt; button(&quot;button A&quot;, translate: {0, 0})
+               |&gt; button(&quot;button B&quot;, translate: {50, 0})
+             end,
+             translate: {600, 0}
+           )),
+         translate: {0, 500}
+       )
+       |&gt; group(
+         &amp;(&amp;1
+           |&gt; group(@chan_q, translate: {0, 110}) # Similar to the group below ...
+           |&gt; group(@chan_f, translate: {0, 160}) # Similar to the group below ...
+           |&gt; group(
+             fn g -&gt;
+               g
+               |&gt; Rotary.add_to_graph(0.50, id: {:chan, {:lf, :db}}, mode: :center, translate: {0, 0})
+               |&gt; Rotary.add_to_graph(0.50, id: {:chan, {:lmf, :db}}, mode: :center, translate: {40, 0})
+               |&gt; Rotary.add_to_graph(0.50, id: {:chan, {:hmf, :db}}, mode: :center, translate: {80, 0})
+               |&gt; Rotary.add_to_graph(0.50, id: {:chan, {:hf, :db}}, mode: :center, translate: {120, 0})
+             end,
+             translate: {0, 350}
+           )),
+         translate: {140, 0}
+       )</code></pre><p>… possibly with more similar blocks above.</p><p>If you are anything like me, it already bothers you that the code above mixes (gasp!) the two types of anonymous functions. This is in order to <strong>save one line per level of nesting</strong> when running <code class="inline">mix format</code>, as the capture-style (<code class="inline">&amp;(&amp;1 * &amp;1)</code>) is allowed to keep its start and first expression terms on the same line whereas the arrow-style (<code class="inline">fn x -&gt; x*x end</code>) isn’t. Unfortunately, it is not allowed to nest captures, so they can only be used on the first level.</p><p>For those that prefer consistency or just arrow-style anonymous functions, the following version might be more appealing, although still not that pleasant:</p><pre><code class="language-elixir">@graph Graph.build(font: :roboto, font_size: 16)
+       |&gt; group(
+         fn g -&gt;
+           g
+           |&gt; group(
+             fn g -&gt;
+               g
+               |&gt; button(&quot;button 1&quot;, translate: {0, 0})
+               |&gt; button(&quot;button 2&quot;, translate: {50, 0})
+             end,
+             translate: {500, 0}
+           )
+           |&gt; group(
+             fn g -&gt;
+               g
+               |&gt; button(&quot;button A&quot;, translate: {0, 0})
+               |&gt; button(&quot;button B&quot;, translate: {50, 0})
+             end,
+             translate: {600, 0}
+           )
+         end,
+         translate: {0, 500}
+       )
+       |&gt; group(
+         fn g -&gt;
+           g
+           |&gt; group(@chan_q, translate: {0, 110}) # Similar to the group below ...
+           |&gt; group(@chan_f, translate: {0, 160}) # Similar to the group below ...
+           |&gt; group(
+             fn g -&gt;
+               g
+               |&gt; Rotary.add_to_graph(0.50, id: {:chan, {:lf, :db}}, mode: :center, translate: {0, 0})
+               |&gt; Rotary.add_to_graph(0.50, id: {:chan, {:lmf, :db}}, mode: :center, translate: {40, 0})
+               |&gt; Rotary.add_to_graph(0.50, id: {:chan, {:hmf, :db}}, mode: :center, translate: {80, 0})
+               |&gt; Rotary.add_to_graph(0.50, id: {:chan, {:hf, :db}}, mode: :center, translate: {120, 0})
+             end,
+             translate: {0, 350}
+           )
+         end,
+         translate: {140, 0}
+       )</code></pre><p>Don’t even think about editing that big ‘ol mess to change nesting (I did), it’s not fun.</p><h2 id="deferred-helpers">Deferred Helpers</h2><p>Ok, enough of this rubbish, let’s write a cleaner version — enter deferred specs!</p><pre><code class="language-elixir">  @graph Graph.build(font: :roboto, font_size: 16)
+         |&gt; add_specs_to_graph(@top_groups)</code></pre><p>See? That’s much cleaner! Thank you, bye bye.</p><p>Yeah, you probably can see where this is going; we’ll be sacrificing the general overview in order to gain a proper understanding of what we’re doing at each level and with what.</p><pre><code class="language-elixir"># Not factored apart enough?
+# A stylistic choice?
+# You decide!
+@top_button_grid [
+  group_spec(
+    [
+      button_spec(&quot;button 1&quot;, translate: {0, 0}),
+      button_spec(&quot;button 2&quot;, translate: {50, 0})
+    ],
+    translate: {500, 0}
+  ),
+  group_spec(
+    [
+      button_spec(&quot;button A&quot;, translate: {0, 0}),
+      button_spec(&quot;button B&quot;, translate: {50, 0})
+    ],
+    translate: {600, 0}
+  )
+]
+
+@chan_q ...
+
+@chan_f ...
+
+@chan_db [
+  Rotary.rotary_spec(0.50, id: {:chan, {:lf, :db}}, mode: :center, translate: {0, 0}),
+  Rotary.rotary_spec(0.50, id: {:chan, {:lmf, :db}}, mode: :center, translate: {40, 0}),
+  Rotary.rotary_spec(0.50, id: {:chan, {:hmf, :db}}, mode: :center, translate: {80, 0}),
+  Rotary.rotary_spec(0.50, id: {:chan, {:hf, :db}}, mode: :center, translate: {120, 0})
+]
+
+@top_controls [
+  group_spec(@chan_q, translate: {0, 110}),
+  group_spec(@chan_f, translate: {0, 160}),
+  group_spec(@chan_db, translate: {0, 350})
+]
+
+@top_groups [
+  group_spec(@top_button_grid, translate: {0, 500}),
+  group_spec(@top_controls, translate: {140, 0})
+]
+
+@graph Graph.build(font: :roboto, font_size: 16)
+       |&gt; add_specs_to_graph(@top_groups)</code></pre><p>So, this might be enough for you! But I’ve actually written a deferred group spec to improve things, ever so slightly.</p><h2 id="can-we-do-better?-(pull-request-pending!)">Can we do Better? (Pull Request Pending!)</h2><p>I’ve made a <a href="https://github.com/boydm/scenic/pull/163">pull request</a>, so it will hopefully be in Scenic soon.</p><p>I have a full screen-height of graph code in a project I am working on and noticed that it was tricky to grasp what was going on overall. The main issue was that <code class="inline">mix format</code> would enforce unfortunate formatting that wasted lines, which made me split it up quite heavily and lose track of how different groups related to each other.</p><pre><code class="language-elixir">@graph Graph.build(font: :roboto, font_size: 16)
+       |&gt; add_specs_to_graph([
+         group_spec_r([translate: {0, 500}], [
+           group_spec_r([translate: {500, 0}], [
+             button_spec(&quot;button 1&quot;, translate: {0, 0}),
+             button_spec(&quot;button 2&quot;, translate: {50, 0})
+           ]),
+           group_spec_r([translate: {600, 0}], [
+             button_spec(&quot;button A&quot;, translate: {0, 0}),
+             button_spec(&quot;button B&quot;, translate: {50, 0})
+           ])
+         ]),
+         group_spec_r([translate: {140, 0}], [
+           group_spec_r([translate: {0, 110}], [
+             Rotary.rotary_spec(0.0, id: {:chan, {:lmf, :q}}, mode: :fill, translate: {180, 0}),
+             Rotary.rotary_spec(0.0, id: {:chan, {:hmf, :q}}, mode: :fill, translate: {220, 0})
+           ]),
+           group_spec_r([translate: {0, 160}], [
+             Rotary.add_to_graph(0.0, id: {:chan, {:hpf, :hz}}, mode: :fill, translate: {100, 0}),
+             Rotary.add_to_graph(0.0, id: {:chan, {:lf, :hz}}, mode: :fill, translate: {140, 0}),
+             Rotary.add_to_graph(0.0, id: {:chan, {:lmf, :hz}}, mode: :fill, translate: {180, 0}),
+             Rotary.add_to_graph(0.0, id: {:chan, {:hmf, :hz}}, mode: :fill, translate: {220, 0}),
+             Rotary.add_to_graph(0.0, id: {:chan, {:hf, :hz}}, mode: :fill, translate: {260, 0}),
+             Rotary.add_to_graph(0.0, id: {:chan, {:lpf, :hz}}, mode: :fill, translate: {300, 0})
+           ]),
+           group_spec_r([translate: {0, 350}], [
+             Rotary.rotary_spec(0.50, id: {:chan, {:lf, :db}}, mode: :center, translate: {0, 0}),
+             Rotary.rotary_spec(0.50, id: {:chan, {:lmf, :db}}, mode: :center, translate: {40, 0}),
+             Rotary.rotary_spec(0.50, id: {:chan, {:hmf, :db}}, mode: :center, translate: {80, 0}),
+             Rotary.rotary_spec(0.50, id: {:chan, {:hf, :db}}, mode: :center, translate: {120, 0})
+           ])
+         ])
+       ])</code></pre><p>The observant reader will have noticed that I bothered to include the <code class="inline">@chan_q</code> and <code class="inline">@chan_f</code> groups, which I did since they no longer shadow the issues being demonstrated. I hope I’ve made a compelling case for the use of the <code class="inline">group_spec_r</code> helper!</p><p>Otherwise, I’ll just have to implement a simple hex package or something, I guess.</p><h3 id="bonus-points-for-brevity">Bonus Points for Brevity</h3><p>Transformations (translate, scale, rotate, …) can be shortened to a single letter!</p><pre><code class="language-elixir">@graph Graph.build(font: :roboto, font_size: 16)
+       |&gt; add_specs_to_graph([
+         group_spec_r([t: {0, 500}], [
+           group_spec_r([t: {500, 0}], [
+             button_spec(&quot;button 1&quot;, t: {0, 0}),
+             button_spec(&quot;button 2&quot;, t: {50, 0})
+           ]),
+           group_spec_r([t: {600, 0}], [
+             button_spec(&quot;button A&quot;, t: {0, 0}),
+             button_spec(&quot;button B&quot;, t: {50, 0})
+           ])
+         ]),
+         group_spec_r([t: {140, 0}], [
+           group_spec_r([t: {0, 110}], [
+             Rotary.rotary_spec(0.0, id: {:chan, {:lmf, :q}}, mode: :fill, t: {180, 0}),
+             Rotary.rotary_spec(0.0, id: {:chan, {:hmf, :q}}, mode: :fill, t: {220, 0})
+           ]),
+           group_spec_r([t: {0, 160}], [
+             Rotary.add_to_graph(0.0, id: {:chan, {:hpf, :hz}}, mode: :fill, t: {100, 0}),
+             Rotary.add_to_graph(0.0, id: {:chan, {:lf, :hz}}, mode: :fill, t: {140, 0}),
+             Rotary.add_to_graph(0.0, id: {:chan, {:lmf, :hz}}, mode: :fill, t: {180, 0}),
+             Rotary.add_to_graph(0.0, id: {:chan, {:hmf, :hz}}, mode: :fill, t: {220, 0}),
+             Rotary.add_to_graph(0.0, id: {:chan, {:hf, :hz}}, mode: :fill, t: {260, 0}),
+             Rotary.add_to_graph(0.0, id: {:chan, {:lpf, :hz}}, mode: :fill, t: {300, 0})
+           ]),
+           group_spec_r([t: {0, 350}], [
+             Rotary.rotary_spec(0.50, id: {:chan, {:lf, :db}}, mode: :center, t: {0, 0}),
+             Rotary.rotary_spec(0.50, id: {:chan, {:lmf, :db}}, mode: :center, t: {40, 0}),
+             Rotary.rotary_spec(0.50, id: {:chan, {:hmf, :db}}, mode: :center, t: {80, 0}),
+             Rotary.rotary_spec(0.50, id: {:chan, {:hf, :db}}, mode: :center, t: {120, 0})
+           ])
+         ])
+       ])</code></pre><p>If you have read this far, pat yourself on the back and grab a cookie.</p><p>Thank you for your time :)</p></div></article></main>
+      <hr>
+      <footer>
+        
+<!--=====================================-->
+<!-- Override "includes/footer.html.eex" -->
+<!-- to customize your footer contents.  -->
+<!--=====================================-->
+
+        <p>
+          Powered by <a href="https://github.com/Dalgona/Serum">Serum</a> v1.1.0,
+          with <a href="https://github.com/Dalgona/serum-theme-essence">Essence</a> theme
+        </p>
+      </footer>
+    </div>
+    <script src="/assets/js/prism.js"></script>
+  </body>
+</html>
+<script>
+const ws_url = "ws://" + location.host + "/serum_live_reloader";
+var ws;
+
+connect();
+
+function connect() {
+  ws = new WebSocket(ws_url);
+  ws.onmessage = onMessage;
+  ws.onclose = onClose;
+}
+
+function onMessage(e) {
+  if (e.data === "reload") {
+    location.reload();
+  }
+}
+
+function onClose(e) {
+  console.warn("WebSocket disconnected from server. Reconnecting in 10 seconds.");
+  setTimeout(connect, 10000)
+}
+</script>
